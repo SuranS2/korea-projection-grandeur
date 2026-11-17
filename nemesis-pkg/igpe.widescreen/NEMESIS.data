@@ -1,0 +1,27 @@
+[nemesis]
+version=1.1
+id=igpe.widescreen
+name=Grandeur IG Widescreen (1920x720)
+type=service,application
+package-version=1.0.0
+short-desc="1920x720 fullscreen CarPlay and Android Auto for Grandeur IG (IGPE)"
+detailed-desc="더 뉴 그랜저 IG (IGPE.KOR.*.260902)에서 무선 핫스팟이나 HMG-API 없이 카플레이·안드로이드 오토 1920x720 전체화면과 유선 연결 설정을 유지합니다.
+
+끄기/켜기: USB 맨 위에 kp-wide-off 또는 kp-wide-on 파일을 넣고 Launch를 누르세요.
+삭제하면 설치 전 시스템 값으로 자동 복원됩니다."
+os="IGPE.KOR.*.260902"
+models="*_kr"
+postinstall=scripts/post.sh
+preuninstall=scripts/preun.sh
+
+[app.0]
+kind=sh
+path=bin/status.sh
+uid=root
+
+[service.0]
+name=widescreen
+kind=sh
+path=svc/widescreen.sh
+uid=root
+mode=restart

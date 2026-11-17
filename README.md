@@ -1,216 +1,100 @@
-# Korea Projection
+# Grandeur IG Widescreen (`igpe.widescreen`)
 
-한국 현대·기아 내비(Gen5W 헤드유닛)에서 **무선 카플레이**와 **무선 안드로이드 오토**를 쓸 수 있게 해 주는 NEMESIS 패키지입니다.
+한국 내수 더 뉴 그랜저 IG PE (`IGPE.KOR.*.260902`) Gen5W 헤드유닛에서 순정 핫스팟(`hostapd`)·`HMG-API`·`/system` 파일을 전혀 건드리지 않고 **카플레이·안드로이드 오토 `1920x720` 전체화면(와이드스크린)과 유선 연결 설정만** 적용·유지하는 NEMESIS 패키지입니다.
 
-- **왜 필요한가:** 한국 내수 펌웨어에서는 HMG-API 무선 모드가 Wi-Fi 핫스팟을 요청해도 순정 핫스팟이 켜지지 않습니다.
-- **무엇을 하나:** 부팅할 때 순정 `hostapd`(핫스팟)와 `dnsmasq`(IP 나눠 주기)를 직접 켜서 폰이 무선으로 붙게 합니다. HMG-API 무선 모드와 그 차의 지도도 **자동으로 설치**하므로 HMG-API 앱에서 따로 설정하지 않아도 됩니다.
-- **함께 되는 것:** 계기판·HUD 회전 안내(순정 한국 내비와 같은 그림), 무선 카플레이 곡 정보, 내비 화면의 상태 화면과 QR 제보.
+- **기존 `korea.projection`과 함께 설치 가능:** `korea.projection`(1.7.2 등)이 이미 설치되어 있어도 **삭제나 재부팅 없이** 바로 추가 설치해 전체화면 설정값만 변경·유지할 수 있습니다. (단, 이미 와이드 패치가 포함된 `korea.projection` 빌드를 사용 중이라면 중복 설치할 필요가 없습니다.)
+- **단독(유선) 설치도 가능:** 무선 프로젝션이나 `HMG-API` 없이도 NEMESIS만 있으면 동작하며, `busybox`·`awk`·`sed`·`/system` 수정 없이 순정 `/system/bin/sh` + `toolbox`로만 작동합니다.
+- **자동 백업 및 원복:** 설치 전에 기존 `Settings.System` 값을 저장해 두며, NEMESIS Manager에서 **Uninstall**하면 설치 전 상태로 자동 복원됩니다.
 
-> ⚠️ 차량 소프트웨어를 바꾸는 일입니다. 모든 책임은 차 주인에게 있습니다. 운행 중에는 조작하지 마세요.
+> ⚠️ 차량 소프트웨어를 변경하는 패키지입니다. 모든 책임은 차주 본인에게 있으며, 설치와 조작은 반드시 정차 상태에서 진행하세요.
 
-버전별 변경 내역은 [릴리스](../../releases)에 있습니다.
+---
 
-## 지원 차량
+## 지원 대상
 
-**✅ 확인 30종** (현대 그랜저·쏘나타·아반떼·싼타페·팰리세이드·투싼·캐스퍼·벨로스터 N, 기아 니로·K5·K7 프리미어·K8·쏘렌토·스팅어·K3·쏘울 부스터 EV·EV6·셀토스, 제네시스 G70) · **🧪 시험 중 5종**. 연식·동력(가솔린·하이브리드 등)이 다르면 따로 셉니다.
+| 항목 | 내용 |
+|---|---|
+| 확인된 빌드 패턴 | `IGPE.KOR.*.260902` (예: `IGPE.KOR.S5W_M.V039.001.260902`, `IGPE.KOR.0000.V039.001.260902`) |
+| 필요 환경 | **NEMESIS 1.16 이상** (`HMG-API`는 없어도 됨) |
+| USB 메모리 | 32GB 이하 권장, **FAT32** 포맷 |
 
-목록에 없는 한국 차(`*.KOR.*`)도 설치하면 **자동으로 시도**합니다. HMG-API가 내 차에서 지도를 만들어 맞는지 확인한 뒤 켜 봅니다. 아반떼·투싼·캐스퍼·싼타페·스팅어 등 여러 차가 이렇게 동작을 확인했습니다.
+- 다른 차종(`IGPE21`, `IGPEHEV`, `DN8`, `CN7` 등)이나 다른 소프트웨어 날짜 빌드(`260604` 등)에서는 안전을 위해 설정을 적용하지 않습니다.
+- 다른 차종·빌드용으로 직접 빌드하려면 [NEMESIS.data](nemesis-pkg/igpe.widescreen/NEMESIS.data)의 `os=`와 [svc/widescreen.sh](nemesis-pkg/igpe.widescreen/svc/widescreen.sh)의 `CARS_WIDE`를 수정한 뒤 `sh scripts/build-usb.sh`로 다시 묶으면 됩니다.
 
-<details>
-<summary><b>차종별 지원 목록 펼치기</b></summary>
+---
 
-내비 소프트웨어는 대부분 `<코드>.KOR.0000.V039.001.260902`입니다(스포티지 NQ5는 `V038.001.260604`). 표에는 앞의 코드만 적었습니다.
+## USB에 담아 바로 설치하기
 
-**현대**
+### 1. USB 준비 (FAT32)
+1. 32GB 이하 USB 메모리를 **FAT32**로 포맷합니다.
+2. 아래 두 가지 방법 중 하나로 USB 설치 파일을 받습니다.
+   - **방법 A (권장 · ZIP 다운로드):** [Releases](../../releases) 또는 [`dist/igpe-widescreen-1.0.0-usb.zip`](dist/igpe-widescreen-1.0.0-usb.zip)을 내려받아 압축을 푼 뒤, **폴더 안의 내용물 3개**를 USB 맨 위(루트)에 복사합니다.
+   - **방법 B (저장소 `usb/` 폴더 사용):** 이 브랜치의 [`usb/`](usb) 폴더 안의 내용물을 그대로 USB 맨 위(루트)에 복사합니다.
 
-| 차종 | 연식·세부 | 코드 | 상태 |
-|---|---|---|---|
-| 그랜저 | 2021 2.5 가솔린 (IG PE) | `IGPE` | ✅ 확인 ([#70](../../issues/70)) |
-| | 2021 3.0 LPI (IG PE) | `IGPE21` | ✅ 확인 ([#71](../../issues/71)) |
-| | 2020 하이브리드 (IG) | `IGPEHEV` | ✅ 확인 ([#72](../../issues/72)) |
-| 쏘나타 | 2021 하이브리드 (DN8) | `DN822HEV` | ✅ 확인 ([#67](../../issues/67)) |
-| 벨로스터 N | 2021 (JS) | `JSN` | ✅ 확인 ([#73](../../issues/73)) |
-| 팰리세이드 | 2019 (LX2) | `LX2` | ✅ 확인 ([#74](../../issues/74)) |
-| 아이오닉 | 2020 플러그인 하이브리드 (AE PE) | `AEPEPHEV` | 🧪 시험 중 ([#59](../../issues/59)) |
-| 아반떼 | 2021 가솔린 (CN7) | `CN7` | ✅ 확인 ([#124](../../issues/124)) |
-| | 2021 하이브리드 (CN7) | `CN7HEV` | ✅ 확인 ([#103](../../issues/103)) |
-| 싼타페 | 2021 (TM PE) | `TMFL` | ✅ 확인 (무선 안드로이드 오토, [#104](../../issues/104)) |
-| 캐스퍼 | 2021 (AX1) | `AX1` | ✅ 확인 ([#105](../../issues/105)) |
-| 쏘나타 | 2021 2.0 가솔린 (DN8) | `DN8` | ✅ 확인 (무선 안드로이드 오토, [#127](../../issues/127)) |
-| 투싼 | 2021 하이브리드 (NX4) | `NX4HEV` | ✅ 확인 ([#125](../../issues/125)) |
-| | 2021 가솔린 (NX4) | `NX4` | ✅ 확인 (순정 핫스팟을 쓰는 차, [#126](../../issues/126)) |
+### 2. USB 폴더 구조 확인
+USB를 열었을 때 맨 위에 아래 3가지가 바로 보여야 합니다.
 
-**기아**
+```text
+USB (맨 위 / 루트)
+├─ NEMESIS.data
+├─ README.txt
+└─ packages/
+    └─ igpe.widescreen.zip   ← 안쪽 zip은 절대 풀지 마세요
+```
 
-| 차종 | 연식·세부 | 코드 | 상태 |
-|---|---|---|---|
-| 니로 | 2020 하이브리드 (DE PE) | `DEPEHEV` | ✅ 확인 (개발 차, 무선 안드로이드 오토, [#64](../../issues/64)) |
-| | 2020 플러그인 하이브리드 (DE) | `DEPEPHEV` | ✅ 확인 (무선 안드로이드 오토, [#65](../../issues/65)) |
-| | 2023 하이브리드 (SG2) | `SG2HEV` | 🧪 시험 중 ([#78](../../issues/78)) |
-| | 2023 EV (SG2) | `SG2EV` | ✅ 확인 (순정 핫스팟을 쓰는 차, [#128](../../issues/128)) |
-| K5 | 2020 하이브리드 (DL3) | `DL3HEV` | ✅ 확인 ([#66](../../issues/66)) |
-| | 2020 가솔린 (DL3) | `DL3` | 🧪 시험 중 ([#130](../../issues/130)) |
-| | 2022 하이브리드 (DL3) | `DL3HEV22` | ✅ 확인 (무선 안드로이드 오토, [#135](../../issues/135)) |
-| K7 프리미어 | 2021 (YG) | `YGPE` | ✅ 확인 ([#79](../../issues/79)) |
-| | 2019 하이브리드 (YG PE) | `YGPEHEV` | ✅ 확인 ([#80](../../issues/80)) |
-| 쏘렌토 | 2022 하이브리드 (MQ4) | `MQ422HEV` | ✅ 확인 ([#76](../../issues/76)) |
-| | 2022 디젤 (MQ4) | `MQ422` | ✅ 확인 ([#134](../../issues/134)) |
-| | 2021 하이브리드 (MQ4) | `MQ4HEV` | ✅ 확인 (무선 안드로이드 오토, [#97](../../issues/97)) |
-| K3 | BD PE | `BDPE` | ✅ 확인 ([#60](../../issues/60)) |
-| K8 | 2023 하이브리드 (GL3) | `GL3HEV` | ✅ 확인 ([#69](../../issues/69)) |
-| | 2023 2.5 가솔린 (GL3) | `GL3` | 🧪 시험 중 ([#68](../../issues/68)) |
-| EV6 | 2022 (CV) | `CVEV` | ✅ 확인 ([#63](../../issues/63)) |
-| 스포티지 | 2020 가솔린 (NQ5) | `NQ5` | 🧪 시험 중 ([#77](../../issues/77)) |
-| 스팅어 | 2021 (CK PE) | `CKPE` | ✅ 확인 ([#61](../../issues/61)) |
-| 쏘울 부스터 | 2019 EV (SK3) | `SK3EV` | ✅ 확인 ([#129](../../issues/129)) |
-| 셀토스 | 2020 (SP2) | `SP221` | ✅ 확인 ([#140](../../issues/140)) |
+> 가장 흔한 실수: `packages/igpe.widescreen.zip`의 압축을 풀어 버리거나, 바깥 ZIP 이름 폴더째로 USB에 복사하면 NEMESIS가 인식하지 못합니다.
 
-**제네시스**
+### 3. 차량에서 설치
+1. 시동을 켜고 내비게이션 화면이 완전히 부팅될 때까지 기다립니다.
+2. 준비한 USB를 차량 USB 단자에 꽂고 설치 팝업이 뜨면 **예**를 누릅니다.
+3. 설치가 완료되면 USB를 빼고, 필요 시 폰을 다시 연결해 `1920x720` 전체화면 적용 여부를 확인합니다.
 
-| 차종 | 연식·세부 | 코드 | 상태 |
-|---|---|---|---|
-| G70 | 2021 (IK FL) | `IKFL` | ✅ 확인 (순정 핫스팟을 쓰는 차, [#144](../../issues/144)) |
+---
 
-**상태 뜻**
-- ✅ **확인:** 차주 제보로 **무선 카플레이 또는 무선 안드로이드 오토 연결**을 확인한 차입니다. 계기판 안내 같은 부가 기능의 문제는 차종 이슈에서 따로 고칩니다.
-- 🧪 **시험 중:** 설치하면 무선 설정을 시도하지만, 아직 무선 카플레이·안드로이드 오토 연결이 확인되지 않은 차입니다. 되든 안 되든 [제보](docs/car-report-guide.md)해 주세요.
-- **순정 핫스팟을 쓰는 차:** 내비에 무선 카플레이용 핫스팟이 원래 들어 있어, Korea Projection이 그 핫스팟을 쓰는 차입니다. 순정 상태로 무선 카플레이가 되는 차라는 뜻은 아닙니다.
+## 일시 끄기 / 다시 켜기 (USB 토글)
 
-**⛔ Wi-Fi 부품이 없어 안 되는 차** (차주 리포트로 확인)
+패키지를 지우지 않고 순정 분할화면으로 잠시 되돌리거나 다시 켤 수 있습니다.
 
-| 차종 | 코드 | 근거 |
-|---|---|---|
-| 현대 팰리세이드 2023 | `LX2PE` | [#25](../../issues/25) |
-| 현대 아이오닉 5 2022 | `NEEV` | [#139](../../issues/139) |
-| 현대 그랜저 IG 하이브리드 2022 | `IGPE21HEV` | [#156](../../issues/156) |
-| 기아 셀토스 2023 | `SP2PE` | [#58](../../issues/58) |
-| 기아 스팅어 2023 | `CKPE22` | [#99](../../issues/99) |
-| 기아 레이 EV 2023 | `TAMEV` | [#120](../../issues/120) |
+1. FAT32 USB 맨 위(루트)에 확장자 없는 빈 파일을 만듭니다.
+   - 끄기(원래 값 복원): `kp-wide-off`
+   - 다시 켜기(`1920x720` 재적용): `kp-wide-on`
+2. USB를 차량에 꽂은 상태에서 **NEMESIS Manager → Grandeur IG Widescreen (1920x720) → Launch**를 누릅니다(또는 재설치).
+3. 두 파일이 모두 있으면 안전을 위해 `kp-wide-off`가 우선합니다.
 
-- 내비에 Wi-Fi 부품이 없으면 소프트웨어로는 무선 연결을 켤 수 없습니다. Korea Projection을 지우면 원래대로 돌아가고, 유선 카플레이·안드로이드 오토는 그대로 쓸 수 있습니다.
-- **같은 차종이라도 생산 시기·트림에 따라 부품이 없는 차가 있습니다**(쏘렌토 하이브리드·K8 하이브리드·니로 하이브리드 2023 일부). 위 표에 없어도 "Wi-Fi 칩을 찾지 못함"이 뜨면 [제보](docs/car-report-guide.md)해 주세요.
+---
 
-</details>
+## 삭제 및 원래 상태로 복구
 
-내 차에서 되는지 알려 주시면 지원 목록에 추가합니다. [차량 제보 양식](../../issues/new?template=car-report.yml)으로 올리시면 **같은 차종의 [차종별 제보 이슈](https://github.com/StopDragon/korea-projection/issues?q=label%3A%22%F0%9F%93%8C+%EC%B0%A8%EC%A2%85+%EC%9D%B4%EC%8A%88%22)로 자동으로 모입니다.** 설치 방법 같은 질문은 [설치·사용 질문](../../issues/new?template=question.yml)으로 받습니다.
+NEMESIS Manager에서 **Grandeur IG Widescreen (1920x720) → Uninstall**을 실행하면:
+- 설치 전에 이미 있던 설정값은 원래 숫자로 복원됩니다.
+- 설치 전에 없던(`null`) 키는 `content delete`로 다시 제거됩니다.
+- 패키지 설치 이후 사용자가 직접 바꾼 키가 있다면 덮어쓰지 않고 보존합니다.
 
-되든 안 되든 [내 차 제보 가이드](docs/car-report-guide.md)대로 USB의 `KoreaProjection-report` 폴더 안 **파일 3개**를 내 차종 이슈에 댓글로 보내 주세요. 된다고 알려 주시면 그 차를 **✅ 확인됨**으로 올리고, 안 되면 파일 속 기록으로 원인을 찾습니다.
+---
 
-## 질문·제보는 GitHub에서, 사용자끼리 이야기는 오픈 카톡방에서
+## 변경·보호하는 시스템 설정 (`Settings.System`)
 
-- **공식 질문과 차량 제보·버그 신고는 GitHub 이슈로만 받습니다.** [차량 제보](../../issues/new?template=car-report.yml)와 [설치·사용 질문](../../issues/new?template=question.yml) 양식을 써 주세요.
-- **사용자끼리 이야기하는 곳:** [Korea Projection 오픈 카톡방](https://open.kakao.com/o/p58zKvWi). 사용 후기와 팁을 나누는 방입니다. 제작자가 답하는 공식 창구가 아닙니다.
-- 카톡방에 올린 질문·제보는 처리하지 않습니다. 기록이 남지 않고 제보 파일을 확인할 수 없기 때문입니다. 도움이 필요하면 GitHub 이슈로 올려 주세요.
-- 카톡방에는 제보 파일·로그·차대번호 같은 개인정보를 올리지 마세요.
+- 와이드스크린 (`0` / `-1` 적용):
+  - `carplay_ss_osd`, `carplay_ss_osd_dr1`, `carplay_ss_osd_dr2` (`0`)
+  - `androidauto_ss_osd`, `androidauto_ss_osd_dr1`, `androidauto_ss_osd_dr2` (`0`)
+  - `phoneprojection_setting_use_split_screen`, `phoneprojection_setting_use_split_screen_dr1`, `phoneprojection_setting_use_split_screen_dr2` (`-1`)
+- 유선 프로젝션 보호 (미설정이거나 `0`이 아닌 경우만 `1`로 설정, 명시적 `0`은 유지):
+  - `carplay_information`, `carplay_information_dr1`, `carplay_information_dr2`
+  - `androidauto_information`, `androidauto_information_dr1`, `androidauto_information_dr2`
+  - `phoneprojection_setting_enable_usb_cable`, `phoneprojection_setting_enable_usb_cable_dr1`, `phoneprojection_setting_enable_usb_cable_dr2`
 
-## 필요한 것
+---
 
-1. **NEMESIS** 1.16 이상
-2. **HMG-API** 1.0.2 이상
-3. **Korea Projection** (이 패키지)
+## 참고 및 미확인 사항
 
-나머지는 Korea Projection이 알아서 갖춥니다.
-- **HMG-API 무선 모드**(Wireless CarPlay + Android Auto): 없으면 설치하고, 이 패키지가 넣은 모드가 예전 판이면 새 판으로 바꿉니다. 차주가 일부러 지우거나 꺼 둔 것은 다시 설치하지 않습니다.
-- **그 차의 HMG-API 지도:** 없으면 넣거나 그 차에서 만들고, 차에 맞는지 확인합니다.
-- 넣는 무선 모드는 HMG-API 공식 모드에 한국 차를 더한 **"한국 차 빌드"**입니다. HMG-API 공식판에 한국 차 지원이 아직 없기 때문입니다([VysseCodes/HMG-API#22](https://github.com/VysseCodes/HMG-API/pull/22)). 공식판이 지원하면 공식 모드로 옮깁니다.
-- HMG-API에 차에 맞지 않는 다른 무선 모드(예: 북미 차용 기본판)가 이미 있으면 덮어쓰지 않습니다. Launch 화면 안내대로 HMG-API 앱에서 지우고 적용한 뒤 재부팅해 주세요.
-- Korea Projection을 삭제하면 함께 설치했던 무선 모드도 지웁니다.
+- `usb/` 및 `dist/igpe-widescreen-1.0.0-usb.zip`은 `scripts/build-usb.sh`로 생성되었으며 PC 스텁 테스트(`sh tests/stub-test.sh`, `sh`·`mksh`·`ksh`)를 통과했습니다.
+- `HMG-API`나 `korea.projection` 없이 순정 상태로 **유선 Apple CarPlay**만 쓸 경우, `HKMC_DiPO`가 `carplay_wireless` 여부를 참조하는 분기로 인해 순정 유선 CarPlay에 `1920x720`이 반영되는지는 실차 검증이 필요합니다. (`korea.projection`이 이미 설치된 환경에서는 유·무선 동작을 실차에서 함께 확인해 주세요.)
 
-`wireless.projection` 패키지는 **필요 없습니다.** 설치되어 있으면 먼저 삭제해 주세요.
+---
 
-## 설치
+## 직접 검증 및 빌드하기 (개발자용)
 
-처음이시면 **[설치 가이드](docs/install-guide.md)**를 따라 하세요. 포맷부터 폰 연결, 잘 안 될 때까지 한 단계씩 적었습니다.
-
-1. USB를 **FAT32**로 포맷합니다(32GB 이하 USB 권장).
-2. [릴리스](../../releases/latest)에서 **`korea-projection-버전-usb.zip`**을 받습니다. `NEMESIS.data`는 안에 들어 있으니 만들지 않아도 됩니다.
-3. 압축을 풀고, 풀린 폴더 **안에 있는 것**을 USB **맨 위**에 복사합니다.
-   ```
-   USB
-   ├─ NEMESIS.data
-   ├─ README.txt
-   └─ packages
-       └─ korea.projection.zip   ← 이 파일은 압축을 풀지 마세요
-   ```
-4. 내비 화면이 다 뜬 뒤 USB를 꽂고, 설치할지 물으면 **예**를 누릅니다.
-5. USB를 빼고 **3~5분 기다립니다.** 이 동안 재부팅하지 마세요.
-   - NEMESIS Manager에서 이 패키지(Korea Projection: Wireless for Korean Cars)의 **Launch**를 누르면 설치 진행 막대와 알림이 보입니다(뜰 때까지 5~10초).
-   - "무선 카플레이 설정을 마쳤습니다" 알림이 뜨면 **내비를 재부팅합니다**(RESET 버튼 또는 NEMESIS Manager의 재부팅, [자세히](docs/install-guide.md#내비-재부팅하는-법)). 시동만 끄면 내비가 꺼지지 않을 수 있습니다.
-6. 폰에서 무선 카플레이(또는 무선 안드로이드 오토)를 연결합니다.
-
-예전 버전에서 업데이트할 때도 같은 방법으로 설치하면 됩니다.
-
-NEMESIS Manager의 Package Store에는 1.7.1이 올라가 있고, 1.7.2는 심사 중입니다. 최신 판은 위 방법대로 릴리스의 USB 묶음으로 설치하세요.
-
-> **NEMESIS Manager 목록 이름:** **Korea Projection: Wireless for Korean Cars**입니다. 예전 버전은 **Korea Projection** 또는 **Wireless Projection for Korean Cars**로 보이지만 같은 패키지(`korea.projection`)입니다.
-
-## 상태 확인과 제보
-
-NEMESIS Manager → My Packages → **Korea Projection: Wireless for Korean Cars** → **Launch**를 누르세요.
-
-- 내비 화면에 **상태 화면**이 뜹니다.
-  - 맨 위에 한 줄 판정이 색으로 나옵니다(초록: 준비됨/연결됨, 노랑: 확인 필요, 빨강: 문제).
-  - 그 아래 노란 **알림** 줄에 설치 중 안내가 나옵니다(이번 부팅, 최근 30분 안의 것).
-  - 왼쪽에는 무선 기능, 핫스팟, DHCP, 카플레이 연결 수 같은 상태표가 나옵니다.
-- 오른쪽 **QR을 폰 카메라로 찍으면** 내용이 채워진 [차량 제보](../../issues/new?template=car-report.yml) 양식이 열립니다. 제출하면 같은 차종 이슈로 자동으로 옮겨집니다. 차종과 결과만 고르고 제출하면 됩니다.
-- QR과 리포트에는 비밀번호, SSID, 휴대폰 이름, MAC, IP가 들어가지 않습니다. 길이와 예/아니요만 적습니다.
-- USB가 꽂혀 있으면 제보 자료를 USB의 **`KoreaProjection-report`** 폴더에 저장합니다: `1-report.md`(차 정보), `2-car-report.json`(HMG-API Car Report, 1.7.2부터 IP 주소를 가림), `3-log.txt`(기록).
-  - 상태 화면 맨 위에 **"제보 자료 저장 중 N%"**가 보이고, 끝나면 **"완료: USB를 빼셔도 됩니다"**로 바뀝니다(약 1~2분). 그때 USB를 빼세요.
-  - `3-log.txt`에는 폰 프로젝션(카플레이·안드로이드 오토)·길안내·차량 데이터·전화·음악 기록이 들어갑니다. 폰 이름·블루투스 주소·IP·전화번호·연락처 이름은 가리고, 위치(좌표·목적지·교차로 이름)는 `[가림: 위치]`로 바꿉니다. 올리기 전에 한 번 열어 보시고 폰 이름이 보이면 그 줄을 지워 주세요.
-  - 디버그 로그를 켠 차는 `4-debug-private.txt`가 하나 더 생깁니다(1.7.2부터는 따로 `KoreaProjection-private` 폴더에). 운행 기록이라 **이슈에 올리지 마세요.**
-- 폴더 안 파일 3개를 [내 차 제보 가이드](docs/car-report-guide.md)대로 내 차종 이슈에 첨부해 주세요. `4-debug-private.txt`(1.7.1)와 `KoreaProjection-private` 폴더(1.7.2부터)는 올리지 마세요.
-
-## 알려진 문제
-
-- **일부 그랜저 IG(하이브리드·3.0 LPI)에서 Wi-Fi 장치가 켜지지 않아 핫스팟을 못 켭니다**([#52](../../issues/52), [#55](../../issues/55)). 부팅 때 Wi-Fi 칩의 펌웨어를 올리지 못하는 것이 원인으로 보이며, 같은 차종의 다른 차는 됩니다. 아직 고치지 못했습니다. 이 경우 상태 화면에 "Wi-Fi 장치가 켜지지 않아…"가 뜨고 원인 기록이 리포트에 남습니다.
-- **계기판 곧 회전 화면(1.7.2):** 회전 약 350m 전부터(고속도로 출구 약 1km) 순정 내비처럼 큰 교차로 그림과 오른쪽 막대가 나옵니다. 큰 그림은 니로에서 확인했고, **막대가 차고 줄어드는 것은 아직 차에서 확인하지 못했습니다.** 이상하면 차종 이슈에 사진과 리포트를 올려 주세요.
-- 카플레이 계기판 안내는 **지도 앱이 안내 정보를 차로 보낼 때만** 나옵니다. 일부 차(아반떼 CN7 등)에서는 T맵·카카오내비 안내가 오지 않는 사례가 있어 조사하고 있습니다.
-- 안드로이드 오토 음악이 시동 직후 끊기며 순정 미디어 화면과 오가면, 내비의 **블루투스 설정 → 블루투스 오디오 전환 → "휴대폰에서 전환 허용 안 함"**을 골라 보세요(순정의 자동 전환 기능 때문으로 보입니다).
-- 쏘나타 하이브리드·K7 프리미어에서 가끔 카플레이 화면이 멈추는 문제를 조사하고 있습니다.
-
-## 알아 두실 점
-
-- 핫스팟이 켜져 있는 동안에는 **내비가 휴대폰 핫스팟(일반 Wi-Fi)에 붙을 수 없습니다.** 한 Wi-Fi 칩이 핫스팟 역할을 하기 때문입니다.
-- 내비의 일반 Wi-Fi 접속 기능을 잠급니다. Wi-Fi 설정 파일(`/data/misc/wifi/wpa_supplicant.conf`)의 소유자를 root로 바꿉니다. 그러지 않으면 내비의 Wi-Fi 서비스가 30초마다 Wi-Fi를 다시 시작해 핫스팟이 끊깁니다. 한국 내수 펌웨어에는 일반 Wi-Fi 메뉴가 없어 보통은 영향이 없습니다. 삭제하면 원래대로 되돌립니다.
-- 핫스팟은 5GHz 149번, 40MHz(순정 핫스팟 기본값과 같은 설정)로 켭니다. 5GHz가 안 되는 차는 2.4GHz를 쓰던 [1.5.5](../../releases/tag/v1.5.5)를 다시 설치하고 제보해 주세요.
-- Wi-Fi를 한 번도 켜지 않은 차는 처음 설치할 때 Wi-Fi를 한 번 켭니다(카플레이·블루투스가 잠시 끊길 수 있음).
-- 설치 뒤 약 5분 동안 재부팅하지 마세요.
-- Wi-Fi 부품이 없는 차는 켜지지 않습니다.
-- 차 설정에서 ADB TCP가 켜져 있으면 HMG-API가 경고를 띄웁니다. 이 패키지는 `192.168.43.x` 대역을 써서 영향이 없었습니다.
-
-## 삭제
-
-NEMESIS Manager → My Packages → **Korea Projection: Wireless for Korean Cars** → **Uninstall**을 누르면 다음과 같이 정리됩니다.
-- 이 패키지가 켠 핫스팟과 DHCP를 멈춥니다.
-- 이 패키지가 설치한 HMG-API 무선 모드를 지우고 적용합니다. 차주가 직접 넣은 모드와 지도는 남깁니다.
-- 설정 파일, 작업 폴더, 백업(무선 안드로이드 오토 끄기 설정 포함)을 지웁니다.
-- 설치 전에 Wi-Fi가 꺼져 있던 차는 다시 끕니다.
-- 잠갔던 Wi-Fi 설정 파일의 소유자·권한과 함께 치운 파일을 원래대로 되돌립니다.
-- 삭제가 끝나면 **내비를 재부팅해 주세요**([재부팅하는 법](docs/install-guide.md#내비-재부팅하는-법)). 일반 Wi-Fi가 원래대로 돌아옵니다.
-
-삭제할 때 Wi-Fi를 껐다 켜지 않는 이유가 있습니다. 니로에서 확인해 보니 Wi-Fi를 껐다 켜면 Wi-Fi·블루투스 모듈이 다시 시작되고, 블루투스 카플레이가 재부팅 전까지 되지 않았습니다.
-
-## 개발
-
-- 패키지 소스: `nemesis-pkg/korea.projection/`, 상태 화면 앱: `nemesis-pkg/app-src/` (빌드: `scripts/build-app.sh`, Android SDK build-tools와 android-19 필요)
-- 함께 배포하는 HMG-API 무선 모드(한국 차 빌드)의 소스: [`hmgapi-mod/`](hmgapi-mod/README.md)
-- 차에 올리기 전 PC 테스트: `sh tests/stub-test.sh`. 가짜 헤드유닛 환경에서 설치·되돌리기·리포트를 검사합니다.
-- 차 테스트용 USB 스크립트: `scripts/`
-- 규칙:
-  - 사용자 안내는 한국어로 씁니다.
-  - 차 테스트와 배포 전에 코드 리뷰를 합니다.
-  - 실패하면 기존 상태를 유지하고, 항상 되돌릴 방법을 둡니다.
-  - 비밀번호·폰 이름·VIN 같은 개인정보는 기록하지 않습니다.
-
-## 라이선스
-
-[GNU AGPL-3.0](LICENSE). NEMESIS(xwtk)와 HMG-API(VysseCodes)와 같은 라이선스입니다. 제조사 파일은 넣지 않습니다.
-
-- 함께 배포하는 HMG-API 무선 모드(한국 차 빌드)의 대응 소스와 직접 다시 만드는 방법은 [`hmgapi-mod/`](hmgapi-mod/README.md)에 있습니다.
-- 다른 프로젝트에서 가져온 부분과 원저작권은 [`NOTICE.md`](NOTICE.md)에 적었습니다.
-- 1.7.0부터 패키지에 함께 넣는 `bin/busybox`(K3·K8 등 busybox 없는 내비용)는 Korea Projection과 별개 프로그램이며 **GPL-2.0**입니다. 출처와 대응 소스는 [`NOTICE.md`](NOTICE.md#busybox-gpl-20)에 있습니다.
-
-## 감사
-
-- [NEMESIS](https://github.com/xwtk/hmg_nemesis) — xwtk
-- [HMG-API](https://github.com/Open-HMG/HMG-API) — VysseCodes
+```sh
+sh tests/stub-test.sh
+sh scripts/build-usb.sh ./dist
+```
