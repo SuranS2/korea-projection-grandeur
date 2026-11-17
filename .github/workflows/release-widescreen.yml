@@ -1,0 +1,32 @@
+name: Publish igpe.widescreen Release
+
+on:
+  push:
+    tags:
+      - 'widescreen-v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run stub tests
+        run: sh tests/stub-test.sh
+      - name: Build USB zip
+        run: |
+          mkdir -p release-out
+          sh scripts/build-usb.sh ./release-out
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" ./release-out/igpe-widescreen-*-usb.zip \
+            --title "Grandeur IG Widescreen ($TAG)" \
+            --notes "더 뉴 그랜저 IG (IGPE.KOR.*.260902) 전용 1920x720 와이드스크린 및 유선 설정 보호 NEMESIS 패키지입니다. 기존 korea.projection 삭제 없이도 추가 설치 가능하며, 자세한 안내는 igpe-widescreen 브랜치 README를 참고하세요."
