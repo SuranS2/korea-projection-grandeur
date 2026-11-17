@@ -4,7 +4,9 @@ set -e
 umask 022
 B=$(cd "$(dirname "$0")/.." && pwd)
 PKGDIR=$B/nemesis-pkg/igpe.widescreen
-OUT=${1:-$(cd "$B/.." && pwd)}
+OUTARG=${1:-$(cd "$B/.." && pwd)}
+mkdir -p "$OUTARG"
+OUT=$(cd "$OUTARG" && pwd)
 
 [ -d "$PKGDIR" ] || { echo "패키지 폴더 없음: $PKGDIR" >&2; exit 1; }
 VER=$(grep '^package-version=' "$PKGDIR/NEMESIS.data" | sed 's/^package-version=//; s/\r$//')
